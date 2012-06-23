@@ -54,9 +54,8 @@ C. Whatever you want kernel do.
 3. Compare to /proc or /sys file system
 
 Kernel has some component like /proc and /sys file system to perform
-the communication between kernel
-and user space. But they are so complex that we must write some code
-very time we want to use them. However,
+the communication between kernel and user space. But they are so complex 
+that we must write some code very time we want to use them. However,
 with uhook, we just need to insmod the uhook.ko, then call the kernel
 function whenever and wherever.
 
@@ -64,8 +63,8 @@ function whenever and wherever.
 4. TODO
 
 A. This version of uhook, can just support kernel function prototype
-like int func(void). I donot know how to deal
-with the function that has many argument and variable return type.
+like int func(void). I donot know how to deal with the function that 
+has many argument and variable return type.
 
 B. The user space applicantion: uhook, is just a test, so poor, cannot
 process complex command option, I am still
