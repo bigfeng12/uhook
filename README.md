@@ -13,11 +13,11 @@ For example:
 
 I write  a function in kernel, like following:
 
-int uhook_unlock(void)
+int uhook_unlock(void) 
 {
-       printk(KERN_INFO"Unlock mutex\n");
-       mutex_unlock(&uhook_global->mutex);
-       return -1;
+    printk(KERN_INFO"Unlock mutex\n");
+    mutex_unlock(&uhook_global->mutex);
+    return -1;
 }
 EXPORT_SYMBOL_GPL(uhook_test);
 
@@ -40,16 +40,14 @@ registers to examine what is going on.
 B. We can implement some switch in kernel to control if branch. For example:
 
 if (branch_control) {
-     balabalabala......
-     .....
+    balabalabala......
+    .....
 }
 
 We can dynamic change the value of branch_control to let kernel run
 the specific code or not.
 
 C. Whatever you want kernel do.
-
-
 
 3. Compare to /proc or /sys file system
 
