@@ -7,11 +7,9 @@ uhook Linux kernel driver : Call kernel function from user space
 1. What is uhook
 
 uhook(userspace kernel hook) means call kernel function from
-userspace. That is to say, we can
-
-write a function in kernel space and call it in userspace while the
-kernel Image is running. For example:
-
+userspace. That is to say, we can write a function in kernel space 
+and call it in userspace while the kernel Image is running. 
+For example:
 
 I write  a function in kernel, like following:
 
