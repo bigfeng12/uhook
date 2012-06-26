@@ -29,21 +29,30 @@
 /*struct uhook*/
 #define   MAX_ARGV_LEN	 512			/*The length of the buffer used to staorge argv*/
 #define   UHOOK_STA_LEN	 32			/*The length of the buffer used to staorge argv*/
+#define   VERSION_LEN    128 
+
+#define   MODULE_VER    "v0.1"
 
 
 #define   UHOOKCMD_QUERY_FUNC	1		/*CMD used to query if there is a symbal in kernel*/
 #define   UHOOKCMD_QUERY_VAL	2		/*CMD used to query the value of a argument in kernel*/
 #define   UHOOKCMD_RUN		3		/*CMD used to run the func in kernel*/
+#define   UHOOKCMD_GET_VER	4
 
-
-
+struct uhook_version{
+	char		app_version[VERSION_LEN];	/*app version*/
+	char		kernel_version[VERSION_LEN];	/*kernel verion like 3.3.1*/
+	char		module_version[VERSION_LEN];	/*uhook kernel version*/
+};
 struct uhook{
-	char 		fun_name[KSYM_NAME_LEN];/*function name called from userspace*/
-	char 		argv[MAX_ARGV_LEN];	/*argv of function*/
-	int 		argc;			/*number of arg*/
-	int		ret;			/*return value*/
-	char		status[UHOOK_STA_LEN];	/*status of kernel func run*/
-	unsigned long	addr;			/*Address of the kernel symbal*/
+	char 			fun_name[KSYM_NAME_LEN];/*function name called from userspace*/
+	char 			argv[MAX_ARGV_LEN];	/*argv of function*/
+	int 			argc;			/*number of arg*/
+	int 			cmd;			/*which cmd: qurey, run, query_val*/
+	struct uhook_version 	version;		/*software version*/
+	int			ret;			/*return value*/
+	char			status[UHOOK_STA_LEN];	/*status of kernel func run*/
+	unsigned long		addr;			/*Address of kernel symbal*/
 };
 
 struct uhook_desc{
@@ -89,7 +98,6 @@ static int uhook_open(struct inode *inode, struct file *file)
 {
 
 	file->private_data = uhook_global;
-	printk(KERN_INFO"Open uhook device success\n");
 	return 0;
 }
 
@@ -109,6 +117,8 @@ static long uhook_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	char *noexsit = "no-exsit";
 	char *success = "success";
 	char *fail = "fail";
+	char *module_ver = MODULE_VER; 
+	char *ver = NULL; 
 
 	struct uhook	uhook;
 	unsigned long addr;
@@ -210,6 +220,7 @@ static long uhook_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 		addr = kallsyms_lookup_name(uhook.fun_name);
 		if (addr) {
+			//int (*func)(int, int, int, int);
 			int (*func)(void);
 			func = (int (*)(void))addr;
 			ret = func();
@@ -245,6 +256,20 @@ static long uhook_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 			mutex_unlock(&desc->mutex);
 		}
 		break;
+	case UHOOKCMD_GET_VER:
+
+		ver = tmp->version.module_version;
+		if (copy_to_user(ver, module_ver, strlen(module_ver))) {
+			mutex_unlock(&desc->mutex);
+			return -EFAULT;
+		}
+		if (copy_to_user(tmp->status, success, strlen(success))) {
+			mutex_unlock(&desc->mutex);
+			return -EFAULT;
+		}
+		mutex_unlock(&desc->mutex);
+		break;
+		
 	default:
 		printk(KERN_ERR"Unknown cmd\n");
 	}
