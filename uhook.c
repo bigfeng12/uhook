@@ -44,9 +44,12 @@ struct uhook_version{
 	char		kernel_version[VERSION_LEN];	/*kernel verion like 3.3.1*/
 	char		module_version[VERSION_LEN];	/*uhook kernel version*/
 };
+struct argv{
+	int arg0, arg1, arg2, arg3, arg4;
+};
 struct uhook{
 	char 			fun_name[KSYM_NAME_LEN];/*function name called from userspace*/
-	char 			argv[MAX_ARGV_LEN];	/*argv of function*/
+	struct argv 		argv;			/*argv of function*/
 	int 			argc;			/*number of arg*/
 	int 			cmd;			/*which cmd: qurey, run, query_val*/
 	struct uhook_version 	version;		/*software version*/
@@ -69,8 +72,9 @@ int uhook_unlock(void)
 	return -1;
 }
 
-int  uhook_test(void)
+int  uhook_test(int a, int b, int c)
 {
+	printk("%d,%d,%d\n",a,b,c);
 	printk(">>>>>>>>>>uhook test sucessfully<<<<<<<<<<<<<<<<<<<\n");
 	return -1;
 }
@@ -220,10 +224,10 @@ static long uhook_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		}
 		addr = kallsyms_lookup_name(uhook.fun_name);
 		if (addr) {
-			//int (*func)(int, int, int, int);
-			int (*func)(void);
-			func = (int (*)(void))addr;
-			ret = func();
+			int (*func)(int, int, int, int, int);
+			func = (int (*)(int, int, int, int, int))addr;
+			ret = func(uhook.argv.arg0, uhook.argv.arg1, uhook.argv.arg2,
+				   uhook.argv.arg3, uhook.argv.arg4);
 
 			if (copy_to_user(&tmp->addr, &addr, sizeof(unsigned long))) {
 				mutex_unlock(&desc->mutex);
