@@ -22,9 +22,12 @@ struct uhook_version{
 	char		kernel_version[VERSION_LEN];	/*kernel verion like 3.3.1*/
 	char		module_version[VERSION_LEN];	/*uhook kernel version*/
 };
+struct argv{
+	int arg0, arg1, arg2, arg3, arg4;
+};
 struct uhook{
 	char 			fun_name[KSYM_NAME_LEN];/*function name called from userspace*/
-	char 			argv[MAX_ARGV_LEN];	/*argv of function*/
+	struct argv 		argv;			/*argv of function*/
 	int 			argc;			/*number of arg*/
 	int 			cmd;			/*which cmd: qurey, run, query_val*/
 	struct uhook_version 	version;		/*software version*/
@@ -105,7 +108,7 @@ static void cmd_get_version(struct uhook *uhook, int fd)
 	parse_version(uhook);
 }
 
-static void cmd_process(struct uhook *uhook, char *type)
+static void cmd_process_type(struct uhook *uhook, char *type)
 {
 	switch(parse_cmd(type)) {
 	case UHOOKCMD_QUERY_FUNC:
@@ -120,6 +123,28 @@ static void cmd_process(struct uhook *uhook, char *type)
 	default:
 		printf("Unknown type. Try uhook --help|-h to see help\n");
 		exit(-1);
+	}
+}
+/*
+ * uhook -t run -f uhook_test arg1 arg2 arg3
+ * 1      2  3  4    5         6    7    8
+ * */
+
+static void cmd_process_arg(struct uhook *uhook, int argct, char **argvt, int optint)
+{
+	int num_arg = argct - optint;
+	int tmp;
+	int *arg_ptr = (int *)&uhook->argv;
+	
+	if (num_arg > 5){	
+		printf("Error: num of arg is larger than 5\n");
+		exit(-1);
+	}
+	uhook->argc = num_arg;
+	
+	for (tmp = 0; tmp < num_arg; tmp++, arg_ptr++) {
+		int arg = atoi(argvt[optint++]);
+		memcpy(arg_ptr, &arg, sizeof(*arg_ptr));
 	}
 }
 static void cmd_do_func(struct uhook *uhook, char *func, int uhook_fd)
@@ -188,11 +213,12 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			t_opt = optarg;
-			cmd_process(&uhook, t_opt);
+			cmd_process_type(&uhook, t_opt);
 			break;
 		case 's':
 		case 'f':
 			f_opt = optarg;
+			cmd_process_arg(&uhook, argc, argv, optind);
 			cmd_do_func(&uhook, f_opt, uhook_fd);
 			break;
 		case 'h':
