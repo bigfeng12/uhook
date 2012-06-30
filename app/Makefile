@@ -1,2 +1,2 @@
 all:
-	gcc uuhook.c -o uhook
+	gcc uuhook.c -o ../test/uuhook -g

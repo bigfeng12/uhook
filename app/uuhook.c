@@ -147,24 +147,145 @@ static void cmd_process_arg(struct uhook *uhook, int argct, char **argvt, int op
 		memcpy(arg_ptr, &arg, sizeof(*arg_ptr));
 	}
 }
-static void cmd_do_func(struct uhook *uhook, char *func, int uhook_fd)
+
+struct kitem{
+	char		kname[128];	
+	int		num;
+	struct	kitem	*next;
+};
+
+static struct kitem *head = NULL;
+
+static struct kitem *alloc_head()
+{
+	struct kitem *kitem = malloc(sizeof(struct kitem));
+	memset(kitem, 0, sizeof(struct kitem));
+	return kitem;
+}
+
+static void process_newline_tab(struct kitem *kitem)
+{
+	char *str;		
+	if (str = strchr(kitem->kname, '\n')) {
+		*str = '\0';
+	}
+	if (str = strchr(kitem->kname, '\t')) {
+		*str = '\0';
+	}
+}
+static struct kitem *build_kitem(char *kname, int num)
+{
+	struct kitem *kitem = alloc_head();
+	strcpy(kitem->kname, kname);
+	kitem->num = num;
+	process_newline_tab(kitem);
+	return kitem;
+}
+
+static void insert_element(struct kitem *new)
+{
+	new->next = head;
+	head = new;
+}
+
+static struct kitem *show_match()
+{
+	struct kitem *tmp = head;
+
+	for(; tmp; tmp = tmp->next) {
+		printf("%d). %s\n", tmp->num, tmp->kname);
+	}
+}
+
+static struct kitem *choose_one()
+{
+	struct kitem *tmp = head;
+	int choose = 0;
+	char num[32];
+	memset(num, 0, 32);
+
+	printf("Please choose one\n");
+	printf(">>");
+	choose = atoi(fgets(num, 32, stdin));	
+	for(; tmp; tmp = tmp->next) {
+		if (tmp->num == choose) {
+			return tmp;
+		}  
+		continue;
+	}
+	return NULL;
+	
+}
+static void build_pattern_uhook(struct uhook *uhook)
+{
+	struct kitem *tmp = head;
+	if (!tmp) {
+		printf("Pattern not match, please have a check.\n");
+		return;
+	}
+	if (tmp->num == 0) { /*That means only one ksym matches, good!*/
+		strcpy(uhook->fun_name, tmp->kname);
+	} else {	/*That means more than one ksyms matches, let user choose one*/
+		show_match();
+		
+		struct kitem *kitem = choose_one();
+		if (kitem) {
+			strcpy(uhook->fun_name, kitem->kname);
+		} else {
+			printf("Error: Out of range\n");
+		}
+		
+	}
+}
+
+static void clean_up_list(struct kitem **head)
+{
+	struct kitem *tmp = *head;
+	struct kitem *go_free = NULL;
+	while(tmp) {
+		go_free = tmp;
+		tmp = tmp->next;
+		free(go_free);
+	}
+}
+
+static void cmd_process_pattern(struct uhook *uhook, char *pattern)
+{
+	const char *ksyms = "cat /proc/kallsyms | cut -d' ' -f3 | sort | grep ";
+	char cmd[512];
+	char buffer[512];
+	FILE *fp = NULL;
+
+	memset(cmd, 0, 512);
+	strcpy(cmd, ksyms);
+	strcpy(cmd + strlen(ksyms), pattern);
+	fp = popen(cmd, "r");
+
+	while(fgets(buffer, 128, fp)) {
+		static int numth = 0;
+		struct kitem *kitem = build_kitem(buffer, numth);
+		insert_element(kitem);
+		numth++;
+	}
+	build_pattern_uhook(uhook);
+	clean_up_list(&head);
+
+}
+static void cmd_do_func(struct uhook *uhook, int uhook_fd)
 {
 	switch(uhook->cmd) {
 
 	case UHOOKCMD_QUERY_FUNC:
-		build_uhook(uhook, func);
 		ioctl(uhook_fd, UHOOKCMD_QUERY_FUNC, uhook);
 		parse_result(uhook, "query");
 		break;
 
 	case UHOOKCMD_RUN:
-		build_uhook(uhook, func);
 		ioctl(uhook_fd, UHOOKCMD_RUN, uhook);
 		parse_result(uhook, "run");
 		break;
 
 	case UHOOKCMD_QUERY_VAL:
-		build_uhook(uhook, func);
 		ioctl(uhook_fd, UHOOKCMD_QUERY_VAL, uhook);
 		parse_result(uhook, "query val");
 		break;
@@ -219,7 +340,8 @@ int main(int argc, char **argv)
 		case 'f':
 			f_opt = optarg;
 			cmd_process_arg(&uhook, argc, argv, optind);
-			cmd_do_func(&uhook, f_opt, uhook_fd);
+			cmd_process_pattern(&uhook, f_opt);
+			cmd_do_func(&uhook, uhook_fd);
 			break;
 		case 'h':
 		default:
