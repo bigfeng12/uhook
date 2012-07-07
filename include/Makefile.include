@@ -12,6 +12,10 @@ UM		?= $(TOPDIR)/module
 
 export CC DEBUG_FLAG CROSS_COMPILE KDIR	M
 
+#some makefile routine used to wrap
+source_to_app 	=	$(CC) $(1) -o $(2) $(3)
+clean_up	= 	@rm -rfv  $(1)
+
 
 distclean:	mod_clean app_clean
 		@rm -rfv $(TOPDIR)/output
