@@ -1,0 +1,64 @@
+
+INSTALL_DIR	?= $(TOPDIR)/output
+DEBUG_FLAGS	?= -g
+CROSS_COMPILE 	?=
+CC		?= $(CROSS_COMPILE)gcc
+MOD_DIR		?= $(TOPDIR)/module
+APP_DIR		?= $(TOPDIR)/app
+
+UKDIR		?= /lib/modules/`uname -r`/build
+UM		?= $(TOPDIR)/module
+
+
+export CC DEBUG_FLAG CROSS_COMPILE KDIR	M
+
+
+distclean:	mod_clean app_clean
+		@rm -rfv $(TOPDIR)/output
+
+all:		uhook uuhook
+
+install: 	all
+	@mkdir -p $(INSTALL_DIR)
+	@cp 	-fv $(TOPDIR)/uuhook $(INSTALL_DIR)
+	@cp 	-fv $(MOD_DIR)/uhook.ko $(INSTALL_DIR)
+
+	@echo "-------------------------------------------------------------------"
+	@echo 'output/uhook.ko:'
+	@echo -e "	uhook kernel module\n\ttry insmod uhook.ko to load the module"
+	@echo 'output/uuhook:'
+	@echo -e "	uhook userspace applicantion\n\ttry uuhook -h|--help to get more info"
+	@echo "-------------------------------------------------------------------"
+	
+help:
+	@echo 'usage of makefile argument:'
+
+	@echo 'PREFIX:'
+	@echo '		specify the directory of installing output of uhook app compile'
+	@echo 'CROSS_COMPILE:'
+	@echo '		specify the cross compiler when do cross compiling'
+	@echo 'CC:'
+	@echo '		specify the global compiler'
+	@echo 'KDIR:'
+	@echo '		where is the kernel source code tree, defualt is /lib/modules/`uname -r`/'
+	@echo '		build/, this is the most like, in most PC or laptop'
+	@echo 'M:'
+	@echo '		where is uhook source code'
+
+	@echo 'some possible target:'
+	@echo 'help:'
+	@echo '		show this help'
+	@echo 'uhook:'
+	@echo '		build the uhook kernel module'
+	@echo 'mod_clean:'
+	@echo '		clean up tmp files generated when build uhook kernel module'
+	@echo 'uuhook:'
+	@echo '		build the uhook application'
+	@echo 'all:'
+	@echo '		build the uhook and uuhook'
+	@echo 'install:'
+	@echo '		build the uhook and uuhook and install to $INSTALL_DIR'
+	@echo 'app_clean:'
+	@echo '		clean up tmp files generated when build uhook application'
+	@echo 'dist_clean:'
+	@echo '		clean up tmp files generated when build uhook application and uhook kernel module'
