@@ -1,5 +1,7 @@
 uuhook:	$(TOPDIR)/app/uuhook.c
-	$(CC) $(DEBUG_FLAGS)	$^ -o $@
-app_clean: $(TOPDIR)/app/uuhook
-	@rm -fv $^
-	@rm -fv $(TOPDIR)/uuhook
+	$(call source_to_app,$^,$@,$(DEBUG_FLAGS))
+
+.PHONY: app_clean
+app_clean:
+	$(call clean_up,$(TOPDIR)/app/uuhook)
+	$(call clean_up,$(TOPDIR)/uuhook)
