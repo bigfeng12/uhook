@@ -182,10 +182,10 @@ static struct kitem *build_kitem(char *kname, int num)
 	return kitem;
 }
 
-static void insert_element(struct kitem *new)
+static void insert_element(struct kitem **head, struct kitem *new)
 {
-	new->next = head;
-	head = new;
+	new->next = *head;
+	*head = new;
 }
 
 static struct kitem *show_match()
@@ -216,9 +216,9 @@ static struct kitem *choose_one()
 	return NULL;
 	
 }
-static void build_pattern_uhook(struct uhook *uhook)
+static void build_pattern_uhook(struct kitem **head, struct uhook *uhook)
 {
-	struct kitem *tmp = head;
+	struct kitem *tmp = *head;
 	if (!tmp) {
 		printf("Pattern not match, please have a check.\n");
 		return;
@@ -230,7 +230,7 @@ static void build_pattern_uhook(struct uhook *uhook)
 		
 		struct kitem *kitem = choose_one();
 		if (kitem) {
-			strcpy(uhook->fun_name, kitem->kname);
+			build_uhook(uhook, kitem->kname);
 		} else {
 			printf("Error: Out of range\n");
 		}
@@ -249,6 +249,10 @@ static void clean_up_list(struct kitem **head)
 	}
 }
 
+static int check_grep()
+{
+	return system("grep --version &> /dev/null");
+}
 static void cmd_process_pattern(struct uhook *uhook, char *pattern)
 {
 	const char *ksyms = "cat /proc/kallsyms | cut -d' ' -f3 | sort | grep ";
@@ -257,18 +261,24 @@ static void cmd_process_pattern(struct uhook *uhook, char *pattern)
 	FILE *fp = NULL;
 
 	memset(cmd, 0, 512);
-	strcpy(cmd, ksyms);
-	strcpy(cmd + strlen(ksyms), pattern);
-	fp = popen(cmd, "r");
-
-	while(fgets(buffer, 128, fp)) {
-		static int numth = 0;
-		struct kitem *kitem = build_kitem(buffer, numth);
-		insert_element(kitem);
-		numth++;
+	if (check_grep() == 0) {
+	/*We have a grep shell utility, use grep to filte ksyms*/
+		strcpy(cmd, ksyms);
+		strcpy(cmd + strlen(ksyms), pattern);
+		fp = popen(cmd, "r");
+	
+		while(fgets(buffer, 128, fp)) {
+			static int numth = 0;
+			struct kitem *kitem = build_kitem(buffer, numth);
+			insert_element(&head, kitem);
+			numth++;
+		}
+		build_pattern_uhook(&head, uhook);
+		clean_up_list(&head);
+	} else {
+	/*No grep in shell, just build uhook by the pattern, kernel will give answer weather exist of not*/
+		build_uhook(uhook, pattern);
 	}
-	build_pattern_uhook(uhook);
-	clean_up_list(&head);
 
 }
 static void cmd_do_func(struct uhook *uhook, int uhook_fd)
@@ -296,7 +306,6 @@ static void cmd_do_func(struct uhook *uhook, int uhook_fd)
 }
 static void bad(char *opt)
 {
-	printf("Bad option:\n\t%s\n", opt);
 	printf("Type:\n \tuuhook -h|--help get more help\n");
 }
 /*
