@@ -38,10 +38,6 @@ function whenever and wherever.
 4). TODO
 --------
 
-A. This version of uhook, can just support kernel function prototype
-like int func(void). I donot know how to deal with the function that 
-has many argument and variable return type.
+A. This version of uhook, support kernel function with no more than 5 arguments,
 
-B. The user space applicantion: uhook, is just a test, so poor, cannot
-process complex command option, I am still
-working on it
+but the argument can only be vule, address is availiable.
