@@ -58,7 +58,7 @@ static int parse_cmd(char *type)
 	}
 }
 
-static int parse_result(struct uhook *uhook, char *cmd)
+static void parse_result(struct uhook *uhook, char *cmd)
 {
 	printf("ret of cmd(%s):\n\t%d\n", cmd, uhook->ret);	
 	printf("address of symbal(%s):\n\t0x%x\n", uhook->fun_name, uhook->addr);	
@@ -188,7 +188,7 @@ static void insert_element(struct kitem **head, struct kitem *new)
 	*head = new;
 }
 
-static struct kitem *show_match()
+static void show_match()
 {
 	struct kitem *tmp = head;
 
