@@ -41,3 +41,4 @@ function whenever and wherever.
 A. This version of uhook, support kernel function with no more than 5 arguments,
 
 but the argument can only be vule, address is availiable.
+test
